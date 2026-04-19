@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     cmake \
     g++ \
     ffmpeg \
+    libsndfile1 \
     git \
     && rm -rf /var/lib/apt/lists/*
 
@@ -22,8 +23,11 @@ WORKDIR /app
 # Clone the repository
 RUN git clone https://github.com/nineninesix-ai/kani-tts.git .
 
+# Upgrade pip and install build dependencies
+RUN pip3 install --no-cache-dir --upgrade pip
+RUN pip3 install --no-cache-dir Cython
+
 # Install Python dependencies
-# We install kani-tts and other requirements identified in setup.sh
 RUN pip3 install --no-cache-dir \
     fastapi \
     uvicorn \

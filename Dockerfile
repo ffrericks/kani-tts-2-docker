@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir --force-reinstall \
     --index-url https://download.pytorch.org/whl/cu126
 
 # Install server dependencies
-RUN pip install --no-cache-dir fastapi uvicorn scipy python-multipart "transformers @ git+https://github.com/huggingface/transformers.git"
+RUN pip install --no-cache-dir fastapi uvicorn scipy "transformers @ git+https://github.com/huggingface/transformers.git"
 
 # Clone the kani-tts repository to get the server source files
 RUN git clone https://github.com/nineninesix-ai/kani-tts.git /kani-tts-repo

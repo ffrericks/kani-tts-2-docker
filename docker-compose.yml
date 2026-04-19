@@ -8,7 +8,6 @@ services:
       - "8000:8000"
     volumes:
       - hf_cache:/root/.cache/huggingface
-      - voices_data:/app/voices
     deploy:
       resources:
         reservations:
@@ -26,23 +25,21 @@ services:
 volumes:
   hf_cache:
     driver: local
-  voices_data:
-    driver: local
 
 x-casaos:
   architectures:
     - amd64
   main: kani-tts
   description:
-    en_us: Fast, modular and human-like Text-to-Speech powered by Kani-TTS. Now with Voice Gallery and Zero-shot cloning!
+    en_us: Fast, modular and human-like Text-to-Speech powered by Kani-TTS. Generates high-quality speech from text with GPU acceleration.
   tagline:
-    en_us: AI Text-to-Speech & Voice Cloning for your home server
+    en_us: AI Text-to-Speech for your home server
   developer: nineninesix-ai
   author: ffrericks
   icon: https://raw.githubusercontent.com/ffrericks/kani-tts-docker/main/public/logo.png
   thumbnail: ""
   title:
-    en_us: Kani TTS Studio
+    en_us: Kani TTS
   category: AI
   port_map: "8000"
   scheme: http

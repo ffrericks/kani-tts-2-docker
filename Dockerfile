@@ -28,6 +28,8 @@ RUN pip install --no-cache-dir --force-reinstall \
     --index-url https://download.pytorch.org/whl/cu126
 
 # Lfm2HybridConvCache zit alleen in de git versie van transformers, niet op PyPI
+# ARG bust_cache voorkomt dat GitHub Actions een oude gecachede versie gebruikt
+ARG TRANSFORMERS_BUILD_DATE=20260419
 RUN pip install --no-cache-dir --force-reinstall \
     "transformers @ git+https://github.com/huggingface/transformers.git"
 

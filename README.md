@@ -1,26 +1,28 @@
-# Kani-TTS Docker for CasaOS
+# Kani-TTS 2 Docker for CasaOS
 
-A dockerized version of [Kani-TTS](https://github.com/nineninesix-ai/kani-tts), ready to run on **CasaOS** and Proxmox environments with NVIDIA GPU passthrough.
+A dockerized version of [Kani-TTS 2](https://github.com/nineninesix-ai/kani-tts-2), ready to run on **CasaOS** and Proxmox environments with NVIDIA GPU passthrough.
 
-Includes a premium Web UI for easy speech generation directly in your browser.
+Includes a Web UI with built-in **Voice Cloning** — upload a short audio clip and clone any voice.
 
 ---
 
 ## 🚀 Quick Install (CasaOS)
 
-1.  Open **CasaOS** → **App Store** → **Custom Install** (top right)
-2.  Paste the following Docker Compose:
+1. Open **CasaOS** → **App Store** → **Custom Install** (top right)
+2. Paste the following Docker Compose:
 
 ```yaml
 version: '3.8'
+
 services:
-  kani-tts:
-    image: ghcr.io/ffrericks/kani-tts-docker:latest
-    container_name: kani-tts
+  kani-tts-2:
+    image: ghcr.io/ffrericks/kani-tts-2-docker:latest
+    container_name: kani-tts-2
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - hf_cache:/root/.cache/huggingface
+      - voices_data:/app/voices
     deploy:
       resources:
         reservations:
@@ -31,25 +33,33 @@ services:
     restart: unless-stopped
     environment:
       - TZ=Europe/Amsterdam
+
 volumes:
   hf_cache:
+    driver: local
+  voices_data:
+    driver: local
 ```
 
-3.  Under **"Web UI"**, set the port to **`8000`** and the path to **`/`**
-4.  Click **Install**
-5.  Access the Web UI at `http://<your-server-ip>:8000`
+3. Under **"Web UI"**, set the port to **`8001`** and the path to **`/`**
+4. Click **Install**
+5. Access the Web UI at `http://<your-server-ip>:8001`
 
-> **Note:** The first start takes a few minutes to download the AI model (~1GB). This only happens once thanks to the persistent volume.
+> **Note:** The first start takes several minutes to download the AI models. This only happens once thanks to the persistent volume.
+
+> **Running alongside v1?** v1 uses port `8000`, v2 uses `8001` — they can run simultaneously without conflict.
 
 ---
 
-## 🛠 Features
+## ✨ Features
 
+- **Voice Cloning** — Upload any 3–20 second audio clip and clone that voice (zero-shot, no training needed)
+- **Voice Gallery** — Save and manage multiple voice profiles, reuse them anytime
+- **Language Tags** — Hint the model which language to use (`nl_NL`, `en_US`, `de_DE`, etc.)
 - **Pre-built image** — No local compilation needed, pulled directly from GitHub Container Registry
-- **GPU Acceleration** — Pre-configured for NVIDIA GPUs via Docker runtime (4GB+ VRAM recommended)
-- **Persistent Model Cache** — Models are stored in a Docker volume, no re-downloads on restart
-- **Modern Web UI** — Built-in studio interface for speech generation in your browser
-- **FastAPI backend** — `/tts` and `/stream-tts` endpoints for integration with other tools
+- **GPU Acceleration** — Pre-configured for NVIDIA GPUs via Docker runtime
+- **Persistent Storage** — Models and voice profiles are stored in Docker volumes
+- **FastAPI backend** — `/tts`, `/voices` endpoints for integration with n8n and other tools
 
 ---
 
@@ -59,17 +69,50 @@ volumes:
 |-----------|---------|-------------|
 | GPU VRAM | 4 GB | 8 GB+ |
 | RAM | 8 GB | 16 GB |
-| Storage | 5 GB | 10 GB |
+| Storage | 10 GB | 20 GB |
 
-The multilingual `kani-tts-370m` model is used by default — it fits comfortably within 4GB VRAM.
+> **4GB VRAM:** Kani-TTS 2 requires 4–8GB VRAM. With 4GB it may work, but is tight. If the container crashes on startup, there is not enough VRAM available.
 
 ---
 
-## 📦 Supported Models
+## 🎙 Voice Cloning
 
-By default this image uses `nineninesix/kani-tts-370m` (English, Spanish, Chinese, German, Korean, Arabic).
+1. Open the Web UI at `http://<your-server-ip>:8001`
+2. Scroll to **Voice Gallery**
+3. Upload a WAV or MP3 file (3–20 seconds of clean speech)
+4. Give the voice a name and click **Opslaan**
+5. Select the saved voice in the **Stem** dropdown and generate
 
-To change the model, edit `config.py` and rebuild, or override the `MODEL_NAME` environment variable.
+---
+
+## 🔌 API — n8n Integration
+
+### Generate speech (POST /tts)
+
+```json
+{
+  "text": "{{ $json.textPlain }}",
+  "voice_name": "mijn_stem",
+  "language_tag": "nl_NL",
+  "temperature": 0.7
+}
+```
+
+Set **Response Format** to `File` in the n8n HTTP Request node to receive the WAV file directly.
+
+### List saved voices (GET /voices)
+
+Returns a JSON array of saved voice names.
+
+### Upload a voice (POST /voices)
+
+Send as `multipart/form-data` with fields `file` (audio) and `name` (string).
+
+---
+
+## 📦 Model
+
+This image uses `nineninesix/kani-tts-2-pt` — the pretrained multilingual Kani-TTS 2 model.
 
 ---
 
@@ -77,6 +120,6 @@ To change the model, edit `config.py` and rebuild, or override the `MODEL_NAME` 
 
 This project is licensed under the **Apache License 2.0**.
 
-This is a dockerized wrapper around the excellent [Kani-TTS](https://github.com/nineninesix-ai/kani-tts) by **nineninesix-ai**. All credits for the underlying TTS architecture and models go to the original authors.
+This is a dockerized wrapper around [Kani-TTS 2](https://github.com/nineninesix-ai/kani-tts-2) by **nineninesix-ai**. All credits for the TTS architecture and models go to the original authors.
 
-Please adhere to the [Ethical Usage Guidelines](https://github.com/nineninesix-ai/kani-tts?tab=readme-ov-file) of the original project — no impersonation, hate speech, or harmful content.
+Please adhere to the [Ethical Usage Guidelines](https://github.com/nineninesix-ai/kani-tts-2) of the original project — no impersonation, hate speech, or harmful content.

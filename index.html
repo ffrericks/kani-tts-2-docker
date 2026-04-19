@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kani TTS - AI Voice Studio</title>
+    <title>Kani TTS 2 - AI Voice Studio</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -14,307 +14,410 @@
             --text: #f8fafc;
             --text-muted: #94a3b8;
             --success: #22c55e;
+            --danger: #ef4444;
             --glass: rgba(255, 255, 255, 0.05);
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Outfit', sans-serif;
             background-color: var(--bg);
             color: var(--text);
             display: flex;
             justify-content: center;
-            align-items: center;
             min-height: 100vh;
-            overflow-x: hidden;
+            padding: 2rem 1rem;
         }
-
         .container {
             width: 100%;
-            max-width: 600px;
-            padding: 2rem;
+            max-width: 640px;
             animation: fadeIn 0.8s ease-out;
         }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            to   { opacity: 1; transform: translateY(0); }
         }
-
-        header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-        }
-
+        header { text-align: center; margin-bottom: 2rem; }
         h1 {
-            font-size: 3rem;
+            font-size: 2.8rem;
             font-weight: 600;
             background: linear-gradient(to right, #818cf8, #c084fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
         }
+        p.subtitle { color: var(--text-muted); font-size: 1rem; }
 
-        p.subtitle {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
-
-        .studio-card {
+        .card {
             background: var(--card-bg);
             border: 1px solid var(--glass);
             border-radius: 1.5rem;
-            padding: 2rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
-        }
-
-        .input-group {
+            padding: 1.75rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
             margin-bottom: 1.5rem;
         }
-
-        label {
-            display: block;
-            margin-bottom: 0.75rem;
+        .card-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
             color: var(--text-muted);
-            font-weight: 400;
+            margin-bottom: 1.25rem;
         }
 
-        textarea {
+        .input-group { margin-bottom: 1.25rem; }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        textarea, select, input[type="text"] {
             width: 100%;
-            background: rgba(15, 23, 42, 0.5);
+            background: rgba(15, 23, 42, 0.6);
             border: 1px solid var(--glass);
             border-radius: 0.75rem;
-            padding: 1rem;
+            padding: 0.875rem 1rem;
             color: var(--text);
             font-family: inherit;
             font-size: 1rem;
-            resize: vertical;
-            min-height: 120px;
-            transition: all 0.3s ease;
+            transition: border-color 0.2s;
         }
-
-        textarea:focus {
+        textarea { resize: vertical; min-height: 110px; }
+        textarea:focus, select:focus, input[type="text"]:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
         }
 
         .controls {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
+        input[type="range"] { width: 100%; accent-color: var(--primary); margin-top: 0.25rem; }
 
-        .control-item label {
-            font-size: 0.875rem;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            accent-color: var(--primary);
-        }
-
-        button {
+        .btn {
             width: 100%;
             background: var(--primary);
             color: white;
             border: none;
             border-radius: 0.75rem;
-            padding: 1rem;
-            font-size: 1.1rem;
+            padding: 0.875rem;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 0.5rem;
         }
+        .btn:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(63,102,241,0.35); }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-danger { background: var(--danger); }
+        .btn-danger:hover { background: #dc2626; box-shadow: 0 10px 15px -3px rgba(239,68,68,0.35); }
+        .btn-sm { padding: 0.4rem 0.75rem; font-size: 0.85rem; width: auto; border-radius: 0.5rem; }
 
-        button:hover {
-            background: var(--primary-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(63, 102, 241, 0.4);
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .audio-player {
-            margin-top: 2rem;
-            padding-top: 2rem;
+        .audio-result {
+            margin-top: 1.25rem;
+            padding-top: 1.25rem;
             border-top: 1px solid var(--glass);
             display: none;
-            animation: slideUp 0.5s ease-out;
         }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        audio {
-            width: 100%;
-            height: 40px;
-            border-radius: 0.5rem;
-        }
+        audio { width: 100%; border-radius: 0.5rem; margin-top: 0.5rem; }
 
         .status {
-            margin-top: 1rem;
-            text-align: center;
-            font-size: 0.875rem;
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
             color: var(--text-muted);
+            text-align: center;
         }
+        .status.ok  { color: var(--success); }
+        .status.err { color: var(--danger); }
+
+        /* Voice Gallery */
+        .upload-area {
+            border: 2px dashed var(--glass);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            margin-bottom: 1rem;
+        }
+        .upload-area:hover { border-color: var(--primary); }
+        .upload-area input[type="file"] { display: none; }
+        .upload-area .upload-hint { color: var(--text-muted); font-size: 0.9rem; }
+        .upload-area .file-name { color: var(--text); font-size: 0.9rem; margin-top: 0.4rem; }
+
+        .upload-row { display: flex; gap: 0.75rem; align-items: flex-end; }
+        .upload-row .input-group { flex: 1; margin-bottom: 0; }
+
+        .voices-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+        .voice-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15,23,42,0.4);
+            border: 1px solid var(--glass);
+            border-radius: 0.6rem;
+            padding: 0.6rem 1rem;
+        }
+        .voice-item span { font-size: 0.95rem; }
 
         .spinner {
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
             border-radius: 50%;
             border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
+            animation: spin 0.8s linear infinite;
             display: none;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        .tag { display: inline-block; font-size: 0.75rem; background: rgba(99,102,241,0.2); color: #818cf8; border-radius: 0.4rem; padding: 0.15rem 0.5rem; margin-left: 0.4rem; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Kani TTS</h1>
-            <p class="subtitle">Next-gen AI Speech Synthesis</p>
-        </header>
+<div class="container">
+    <header>
+        <h1>Kani TTS 2</h1>
+        <p class="subtitle">AI Voice Studio met Voice Cloning</p>
+    </header>
 
-        <div class="studio-card">
-            <div class="input-group">
-                <label for="text">What should I say?</label>
-                <textarea id="text" placeholder="Type your text here... Kani TTS will transform it into natural speech."></textarea>
+    <!-- TTS Card -->
+    <div class="card">
+        <div class="card-title">Spraak genereren</div>
+
+        <div class="input-group">
+            <label for="text">Tekst</label>
+            <textarea id="text" placeholder="Typ hier de tekst die ingesproken moet worden..."></textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="voice-select">Stem</label>
+            <select id="voice-select">
+                <option value="">— Standaard stem —</option>
+                <optgroup label="Gekloonde stemmen" id="cloned-group"></optgroup>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="lang-tag">Taal tag <span class="tag">optioneel</span></label>
+            <select id="lang-tag">
+                <option value="">— Automatisch —</option>
+                <option value="nl_NL">Nederlands (nl_NL)</option>
+                <option value="en_US">Engels (en_US)</option>
+                <option value="en_GB">Engels UK (en_GB)</option>
+                <option value="de_DE">Duits (de_DE)</option>
+                <option value="fr_FR">Frans (fr_FR)</option>
+                <option value="es_ES">Spaans (es_ES)</option>
+            </select>
+        </div>
+
+        <div class="controls">
+            <div>
+                <label>Temperature: <strong id="temp-val">0.7</strong></label>
+                <input type="range" id="temperature" min="0.1" max="1.0" step="0.05" value="0.7">
             </div>
-
-            <div class="input-group">
-                <label for="voice">Accent / Voice</label>
-                <select id="voice" style="width: 100%; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--glass); border-radius: 0.75rem; padding: 1rem; color: var(--text); font-family: inherit; font-size: 1rem; outline: none;">
-                    <optgroup label="English">
-                        <option value="jenny">Jenny (English)</option>
-                        <option value="david">David (English)</option>
-                        <option value="puck">Puck (English)</option>
-                        <option value="kore">Kore (English)</option>
-                        <option value="andrew">Andrew (English)</option>
-                        <option value="simon">Simon (English)</option>
-                        <option value="katie">Katie (English)</option>
-                        <option value="bert">Bert (English)</option>
-                    </optgroup>
-                    <optgroup label="Deutsch">
-                        <option value="thorsten">Thorsten (German)</option>
-                    </optgroup>
-                    <optgroup label="Español">
-                        <option value="maria">Maria (Spanish)</option>
-                    </optgroup>
-                    <optgroup label="中文">
-                        <option value="mei">Mei (Chinese)</option>
-                        <option value="ming">Ming (Chinese)</option>
-                    </optgroup>
-                    <optgroup label="한국어">
-                        <option value="seulgi">Seulgi (Korean)</option>
-                    </optgroup>
-                    <optgroup label="العربية">
-                        <option value="karim">Karim (Arabic)</option>
-                        <option value="nur">Nur (Arabic)</option>
-                    </optgroup>
-                </select>
+            <div>
+                <label>Top P: <strong id="p-val">0.9</strong></label>
+                <input type="range" id="top_p" min="0.1" max="1.0" step="0.05" value="0.9">
             </div>
+        </div>
 
-            <div class="controls">
-                <div class="control-item">
-                    <label>Temperature: <span id="temp-val">0.6</span></label>
-                    <input type="range" id="temperature" min="0.1" max="1.0" step="0.1" value="0.6">
-                </div>
-                <div class="control-item">
-                    <label>Top P: <span id="p-val">0.95</span></label>
-                    <input type="range" id="top_p" min="0.1" max="1.0" step="0.05" value="0.95">
-                </div>
-            </div>
+        <button class="btn" id="generate-btn">
+            <div class="spinner" id="spinner"></div>
+            <span id="btn-text">Genereer spraak</span>
+        </button>
 
-            <button id="generate-btn">
-                <div class="spinner" id="spinner"></div>
-                <span id="btn-text">Generate Speech</span>
-            </button>
-
-            <div class="audio-player" id="player-container">
-                <label>Result:</label>
-                <audio id="audio" controls></audio>
-                <div class="status" id="status">Ready to generate.</div>
-            </div>
+        <div class="audio-result" id="player-container">
+            <label>Resultaat</label>
+            <audio id="audio" controls></audio>
+            <div class="status" id="gen-status"></div>
         </div>
     </div>
 
-    <script>
-        const textInput = document.getElementById('text');
-        const generateBtn = document.getElementById('generate-btn');
-        const audio = document.getElementById('audio');
-        const playerContainer = document.getElementById('player-container');
-        const status = document.getElementById('status');
+    <!-- Voice Gallery Card -->
+    <div class="card">
+        <div class="card-title">Voice Gallery — Stem klonen</div>
+
+        <label style="margin-bottom:0.75rem;display:block;">Upload referentie audio (3–20 sec, WAV/MP3)</label>
+        <div class="upload-area" id="drop-area" onclick="document.getElementById('voice-file').click()">
+            <input type="file" id="voice-file" accept="audio/*">
+            <div class="upload-hint">Klik om een audiobestand te kiezen</div>
+            <div class="file-name" id="file-name"></div>
+        </div>
+
+        <div class="upload-row">
+            <div class="input-group">
+                <label for="voice-name">Naam voor de stem</label>
+                <input type="text" id="voice-name" placeholder="bijv. mijn_stem">
+            </div>
+            <button class="btn btn-sm" id="upload-btn" style="margin-bottom:0">Opslaan</button>
+        </div>
+
+        <div class="status" id="upload-status"></div>
+
+        <div class="voices-list" id="voices-list">
+            <div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:0.5rem">Laden...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Range sliders ---
+    document.getElementById('temperature').oninput = e => document.getElementById('temp-val').textContent = e.target.value;
+    document.getElementById('top_p').oninput = e => document.getElementById('p-val').textContent = e.target.value;
+
+    // --- File picker ---
+    document.getElementById('voice-file').onchange = e => {
+        const f = e.target.files[0];
+        document.getElementById('file-name').textContent = f ? f.name : '';
+    };
+
+    // --- Load voice list ---
+    async function loadVoices() {
+        try {
+            const res = await fetch('/voices');
+            const voices = await res.json();
+            const list = document.getElementById('voices-list');
+            const group = document.getElementById('cloned-group');
+
+            // Update select
+            group.innerHTML = '';
+            voices.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = v;
+                group.appendChild(opt);
+            });
+
+            // Update gallery list
+            if (voices.length === 0) {
+                list.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:0.5rem">Nog geen stemmen opgeslagen.</div>';
+                return;
+            }
+            list.innerHTML = '';
+            voices.forEach(v => {
+                const item = document.createElement('div');
+                item.className = 'voice-item';
+                item.innerHTML = `
+                    <span>${v}</span>
+                    <button class="btn btn-danger btn-sm" onclick="deleteVoice('${v}')">Verwijder</button>
+                `;
+                list.appendChild(item);
+            });
+        } catch (e) {
+            console.error('Kon stemmen niet laden:', e);
+        }
+    }
+
+    // --- Upload voice ---
+    document.getElementById('upload-btn').onclick = async () => {
+        const file = document.getElementById('voice-file').files[0];
+        const name = document.getElementById('voice-name').value.trim();
+        const status = document.getElementById('upload-status');
+
+        if (!file) { status.textContent = 'Kies eerst een audiobestand.'; status.className = 'status err'; return; }
+        if (!name)  { status.textContent = 'Geef de stem een naam.';        status.className = 'status err'; return; }
+
+        status.textContent = 'Bezig met verwerken...';
+        status.className = 'status';
+
+        const form = new FormData();
+        form.append('file', file);
+        form.append('name', name);
+
+        try {
+            const res = await fetch('/voices', { method: 'POST', body: form });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Onbekende fout');
+            }
+            status.textContent = `Stem "${name}" opgeslagen!`;
+            status.className = 'status ok';
+            document.getElementById('voice-name').value = '';
+            document.getElementById('file-name').textContent = '';
+            document.getElementById('voice-file').value = '';
+            loadVoices();
+        } catch (e) {
+            status.textContent = 'Fout: ' + e.message;
+            status.className = 'status err';
+        }
+    };
+
+    // --- Delete voice ---
+    async function deleteVoice(name) {
+        if (!confirm(`Stem "${name}" verwijderen?`)) return;
+        try {
+            await fetch(`/voices/${name}`, { method: 'DELETE' });
+            loadVoices();
+        } catch (e) {
+            alert('Verwijderen mislukt: ' + e.message);
+        }
+    }
+
+    // --- Generate speech ---
+    document.getElementById('generate-btn').onclick = async () => {
+        const text = document.getElementById('text').value.trim();
+        if (!text) return;
+
+        const btn    = document.getElementById('generate-btn');
         const spinner = document.getElementById('spinner');
         const btnText = document.getElementById('btn-text');
+        const status  = document.getElementById('gen-status');
+        const player  = document.getElementById('player-container');
+        const audio   = document.getElementById('audio');
 
-        // Update range values
-        document.getElementById('temperature').oninput = (e) => document.getElementById('temp-val').textContent = e.target.value;
-        document.getElementById('top_p').oninput = (e) => document.getElementById('p-val').textContent = e.target.value;
+        btn.disabled = true;
+        spinner.style.display = 'block';
+        btnText.textContent = 'Bezig...';
+        status.textContent = '';
+        status.className = 'status';
+        player.style.display = 'block';
 
-        generateBtn.onclick = async () => {
-            const text = textInput.value.trim();
-            if (!text) return;
+        const voiceSelect = document.getElementById('voice-select').value;
+        const langTag     = document.getElementById('lang-tag').value;
 
-            // UI State
-            generateBtn.disabled = true;
-            spinner.style.display = 'block';
-            btnText.textContent = 'Generating...';
-            status.textContent = 'Contacting server...';
-            playerContainer.style.display = 'block';
-
-            try {
-                const response = await fetch('/tts', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: text,
-                        voice: document.getElementById('voice').value,
-                        temperature: parseFloat(document.getElementById('temperature').value),
-                        top_p: parseFloat(document.getElementById('top_p').value)
-                    })
-                });
-
-                if (!response.ok) throw new Error('Generation failed');
-
-                const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
-                audio.src = url;
-                audio.play();
-
-                status.textContent = 'Generation complete!';
-                status.style.color = '#22c55e';
-            } catch (err) {
-                status.textContent = 'Error: ' + err.message;
-                status.style.color = '#ef4444';
-            } finally {
-                generateBtn.disabled = false;
-                spinner.style.display = 'none';
-                btnText.textContent = 'Generate Speech';
-            }
+        const body = {
+            text,
+            temperature: parseFloat(document.getElementById('temperature').value),
+            top_p:       parseFloat(document.getElementById('top_p').value),
         };
-    </script>
+        if (voiceSelect) body.voice_name    = voiceSelect;
+        if (langTag)     body.language_tag  = langTag;
+
+        try {
+            const res = await fetch('/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Genereren mislukt');
+            }
+
+            const blob = await res.blob();
+            audio.src = URL.createObjectURL(blob);
+            audio.play();
+            status.textContent = 'Klaar!';
+            status.className = 'status ok';
+        } catch (e) {
+            status.textContent = 'Fout: ' + e.message;
+            status.className = 'status err';
+        } finally {
+            btn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.textContent = 'Genereer spraak';
+        }
+    };
+
+    // Init
+    loadVoices();
+</script>
 </body>
 </html>

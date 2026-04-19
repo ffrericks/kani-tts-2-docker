@@ -1,13 +1,14 @@
 version: '3.8'
 
 services:
-  kani-tts:
-    image: ghcr.io/ffrericks/kani-tts-docker:latest
-    container_name: kani-tts
+  kani-tts-2:
+    image: ghcr.io/ffrericks/kani-tts-2-docker:latest
+    container_name: kani-tts-2
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - hf_cache:/root/.cache/huggingface
+      - voices_data:/app/voices
     deploy:
       resources:
         reservations:
@@ -19,28 +20,30 @@ services:
     environment:
       - TZ=Europe/Amsterdam
     labels:
-      - "casaos.ui.port=8000"
+      - "casaos.ui.port=8001"
       - "casaos.ui.path=/"
 
 volumes:
   hf_cache:
     driver: local
+  voices_data:
+    driver: local
 
 x-casaos:
   architectures:
     - amd64
-  main: kani-tts
+  main: kani-tts-2
   description:
-    en_us: Fast, modular and human-like Text-to-Speech powered by Kani-TTS. Generates high-quality speech from text with GPU acceleration.
+    en_us: Fast, multilingual Text-to-Speech with voice cloning support, powered by Kani-TTS 2. Generates high-quality speech from text with GPU acceleration.
   tagline:
-    en_us: AI Text-to-Speech for your home server
+    en_us: AI Text-to-Speech 2 with Voice Cloning
   developer: nineninesix-ai
   author: ffrericks
-  icon: https://raw.githubusercontent.com/ffrericks/kani-tts-docker/main/public/logo.png
+  icon: https://cdn-icons-png.flaticon.com/512/11890/11890041.png
   thumbnail: ""
   title:
-    en_us: Kani TTS
+    en_us: Kani TTS 2
   category: AI
-  port_map: "8000"
+  port_map: "8001"
   scheme: http
   index: /

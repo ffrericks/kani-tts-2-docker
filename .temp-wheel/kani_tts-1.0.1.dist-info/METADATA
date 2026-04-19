@@ -1,0 +1,274 @@
+Metadata-Version: 2.4
+Name: kani-tts
+Version: 1.0.1
+Summary: Text-to-speech using neural audio codec and causal language models
+Author-email: simonlob <simonlobgromov@gmail.com>
+License: Apache-2.0
+Project-URL: Homepage, https://github.com/nineninesix-ai/kani-tts
+Project-URL: Repository, https://github.com/nineninesix-ai/kani-tts
+Project-URL: Documentation, https://github.com/nineninesix-ai/kani-tts/blob/main/README.md
+Keywords: tts,text-to-speech,audio,nemo,transformers
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Multimedia :: Sound/Audio :: Speech
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: torch>=2.8.0
+Requires-Dist: nemo-toolkit[tts]==2.4.0
+Requires-Dist: numpy>=1.24.0
+Requires-Dist: scipy>=1.10.0
+Requires-Dist: librosa>=0.10.0
+Requires-Dist: omegaconf>=2.3.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: isort>=5.12.0; extra == "dev"
+Requires-Dist: flake8>=6.0.0; extra == "dev"
+Provides-Extra: audio
+Requires-Dist: soundfile>=0.12.0; extra == "audio"
+
+# Kani-TTS
+
+A simple and efficient text-to-speech library using neural audio codecs and causal language models.
+
+## Features
+
+- Simple, intuitive API with flexible generation parameters
+- Built on Hugging Face Transformers and NVIDIA NeMo
+- High-quality audio generation using neural codecs
+- GPU acceleration support
+- Multi-speaker model support with easy speaker selection
+- Per-generation parameter control for maximum flexibility
+
+## Installation
+
+### From PyPI (once published)
+
+```bash
+pip install kani-tts
+pip install -U transformers # for LFM2 !!!
+```
+
+
+## Quick Start
+
+```python
+from kani_tts import KaniTTS
+
+# Initialize model (replace with your model name)
+model = KaniTTS('your-model-name-here')
+
+# Generate audio from text
+audio, text = model("Hello, world!")
+
+# Save to file (requires soundfile)
+model.save_audio(audio, "output.wav")
+```
+
+## Advanced Usage
+
+### Working with Multi-Speaker Models
+
+Some models support multiple speakers. You can check if your model supports speakers and select a specific voice:
+
+```python
+from kani_tts import KaniTTS
+
+model = KaniTTS('your-multispeaker-model-name')
+
+# Check if model supports multiple speakers
+print(f"Model type: {model.status}")  # 'singlspeaker' or 'multispeaker'
+
+# Display available speakers (pretty formatted)
+model.show_speakers()
+
+# Or access the speaker list directly
+print(model.speaker_list)  # ['Speaker1', 'Speaker2', ...]
+
+# Generate audio with a specific speaker
+audio, text = model.generate("Hello, world!", speaker_id="Speaker1")
+model.save_audio(audio, "speaker1_output.wav")
+
+# Or using the shorthand call syntax
+audio, text = model("Hello, world!", speaker_id="Speaker1")
+```
+
+### Custom Configuration
+
+```python
+from kani_tts import KaniTTS
+
+# Initialize model with model-level parameters
+model = KaniTTS(
+    'your-model-name',
+    max_new_tokens=3000,       # Max audio length (default: 3000)
+    suppress_logs=True,        # Suppress library logs (default: True)
+    show_info=True,            # Show model info on init (default: True)
+)
+
+# Generate with custom sampling parameters per call
+audio, text = model(
+    "Your text here",
+    temperature=0.7,           # Control randomness (default: 1.0)
+    top_p=0.9,                 # Nucleus sampling (default: 0.95)
+    repetition_penalty=1.2,    # Prevent repetition (default: 1.1)
+)
+
+# You can use different parameters for each generation
+audio2, text2 = model(
+    "Another text",
+    temperature=1.2,
+    top_p=0.85,
+)
+```
+
+**API Change:** Generation parameters (`temperature`, `top_p`, `repetition_penalty`) are now passed per-generation call instead of during initialization. This allows you to experiment with different sampling strategies without reloading the model.
+
+When initialized, Kani-TTS displays a beautiful banner with model information:
+```
+╔════════════════════════════════════════════════════════════╗
+║                                                            ║
+║                   N I N E N I N E S I X  😼                ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
+
+              /\_/\
+             ( o.o )
+              > ^ <
+
+──────────────────────────────────────────────────────────────
+  Model: your-model-name
+  Device: GPU (CUDA)
+  Mode: Multi-speaker (5 speakers)
+
+  Configuration:
+    • Sample Rate: 22050 Hz
+    • Max Tokens: 3000
+──────────────────────────────────────────────────────────────
+
+  Ready to generate speech! 🎵
+```
+
+You can disable this banner by setting `show_info=False`, or show it again anytime with `model.show_model_info()`.
+
+### Controlling Logging Output
+
+By default, Kani-TTS suppresses all logging output from transformers, NeMo, and PyTorch to keep your console clean. Only your `print()` statements will be visible.
+
+```python
+from kani_tts import KaniTTS
+
+# Default behavior - logs are suppressed
+model = KaniTTS('your-model-name')
+
+# To see all library logs (for debugging)
+model = KaniTTS('your-model-name', suppress_logs=False)
+
+# You can also manually suppress logs at any time
+from kani_tts import suppress_all_logs
+suppress_all_logs()
+```
+
+### Working with Audio Output
+
+The generated audio is a NumPy array sampled at 22kHz:
+
+```python
+import numpy as np
+import soundfile as sf
+
+audio, text = model("Generate speech from this text")
+
+# Audio is a numpy array
+print(audio.shape)  # (num_samples,)
+print(audio.dtype)  # float32/float64
+
+# Save using soundfile
+sf.write('output.wav', audio, 22050)
+
+# Or use the built-in method
+model.save_audio(audio, 'output.wav', sample_rate=22050)
+```
+
+
+
+### Playing Audio in Jupyter Notebooks
+
+You can listen to generated audio directly in Jupyter notebooks or IPython:
+
+```python
+from kani_tts import KaniTTS
+from IPython.display import Audio as aplay
+
+model = KaniTTS('your-model-name')
+audio, text = model("Hello, world!")
+
+# Play audio in notebook
+aplay(audio, rate=model.sample_rate)
+```
+
+## Architecture
+
+Kani-TTS uses a two-stage architecture:
+
+1. **Text → Audio Tokens**: A causal language model generates audio token sequences from text
+2. **Audio Tokens → Waveform**: NVIDIA NeMo's NanoCodec decodes tokens into audio waveforms
+
+The system uses special tokens to mark different segments:
+- Text boundaries (start/end of text)
+- Speech boundaries (start/end of speech)
+- Speaker turns (human/AI)
+
+Audio tokens are organized in 4-channel codebooks, with each channel representing different aspects of the audio signal.
+
+## Requirements
+
+- Python 3.10 or higher
+- CUDA-capable GPU (recommended) or CPU
+- PyTorch 2.0 or higher
+- Transformers library
+- NeMo Toolkit
+
+## Model Compatibility
+
+This library works with causal language models trained for TTS with the following characteristics:
+- Extended vocabulary including audio tokens
+- Special tokens for speech/text boundaries
+- Compatible with NeMo nano codec (22kHz, 0.6kbps, 12.5fps)
+
+
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Citation
+
+```
+@inproceedings{emilialarge,
+  author={He, Haorui and Shang, Zengqiang and Wang, Chaoren and Li, Xuyuan and Gu, Yicheng and Hua, Hua and Liu, Liwei and Yang, Chen and Li, Jiaqi and Shi, Peiyang and Wang, Yuancheng and Chen, Kai and Zhang, Pengyuan and Wu, Zhizheng},
+  title={Emilia: A Large-Scale, Extensive, Multilingual, and Diverse Dataset for Speech Generation},
+  booktitle={arXiv:2501.15907},
+  year={2025}
+}
+```
+```
+@article{emonet_voice_2025,
+  author={Schuhmann, Christoph and Kaczmarczyk, Robert and Rabby, Gollam and Friedrich, Felix and Kraus, Maurice and Nadi, Kourosh and Nguyen, Huu and Kersting, Kristian and Auer, Sören},
+  title={EmoNet-Voice: A Fine-Grained, Expert-Verified Benchmark for Speech Emotion Detection},
+  journal={arXiv preprint arXiv:2506.09827},
+  year={2025}
+}
+```
+
+## Acknowledgments
+
+- Built on [Hugging Face Transformers](https://github.com/huggingface/transformers)
+- Uses [NVIDIA NeMo](https://github.com/NVIDIA/NeMo) audio codec
+- Powered by PyTorch

@@ -1,26 +1,28 @@
-"""FastAPI server for Kani TTS with streaming support and Web UI"""
+"""FastAPI server for Kani TTS 2 with voice cloning support and Web UI"""
 
 import io
-import time
 import os
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, Response, FileResponse
-from pydantic import BaseModel
-from typing import Optional
+import shutil
+import torch
 import numpy as np
 from scipy.io.wavfile import write as wav_write
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response, FileResponse
+from pydantic import BaseModel
+from typing import Optional
 
-from audio import LLMAudioPlayer, StreamingAudioWriter
-from generation import TTSGenerator
-from config import CHUNK_SIZE, LOOKBACK_FRAMES, TEMPERATURE, TOP_P, MAX_TOKENS
+from kani_tts import KaniTTS, SpeakerEmbedder
 
-from nemo.utils.nemo_logging import Logger
+# Constants
+SAMPLE_RATE = 22050
+VOICES_DIR = "/app/voices"
+MODEL_NAME = "nineninesix/kani-tts-2-pt"
+TEMPERATURE = 0.7
+TOP_P = 0.9
+REPETITION_PENALTY = 1.2
 
-nemo_logger = Logger()
-nemo_logger.remove_stream_handlers()
-
-app = FastAPI(title="Kani TTS API", version="1.0.0")
+app = FastAPI(title="Kani TTS 2 API", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,157 +32,152 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-generator = None
-player = None
+os.makedirs(VOICES_DIR, exist_ok=True)
+
+tts = None
+embedder = None
+
 
 class TTSRequest(BaseModel):
     text: str
     temperature: Optional[float] = TEMPERATURE
-    max_tokens: Optional[int] = MAX_TOKENS
     top_p: Optional[float] = TOP_P
-    chunk_size: Optional[int] = CHUNK_SIZE
-    lookback_frames: Optional[int] = LOOKBACK_FRAMES
-    voice: Optional[str] = None
+    repetition_penalty: Optional[float] = REPETITION_PENALTY
+    voice_name: Optional[str] = None      # naam van opgeslagen voice embedding
+    language_tag: Optional[str] = None    # bijv. "en_US", "nl_NL", "de_DE"
+
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize models on startup"""
-    global generator, player
-    print("🚀 Initializing TTS models...")
+    global tts, embedder
+    print("Initializing Kani TTS 2 models...")
     try:
-        generator = TTSGenerator()
-        player = LLMAudioPlayer(generator.tokenizer)
-        print("✅ TTS models initialized successfully!")
+        tts = KaniTTS(MODEL_NAME)
+        embedder = SpeakerEmbedder()
+        print("Kani TTS 2 initialized successfully!")
     except Exception as e:
-        print(f"❌ Initialization failed: {e}")
+        print(f"Initialization failed: {e}")
+
 
 @app.get("/health")
 async def health_check():
-    """Check if server is ready"""
     return {
-        "status": "healthy" if generator is not None else "initializing",
-        "tts_initialized": generator is not None and player is not None
+        "status": "healthy" if tts is not None else "initializing",
+        "tts_initialized": tts is not None,
+        "cloning_available": embedder is not None,
     }
+
+
+# --- Voice Gallery ---
+
+@app.get("/voices")
+async def list_voices():
+    """Geef lijst van opgeslagen voice profielen"""
+    voices = [f[:-3] for f in os.listdir(VOICES_DIR) if f.endswith(".pt")]
+    return sorted(voices)
+
+
+@app.post("/voices")
+async def upload_voice(file: UploadFile = File(...), name: str = Form(...)):
+    """Upload een audio bestand en sla de speaker embedding op"""
+    if not embedder:
+        raise HTTPException(status_code=501, detail="Speaker Embedder niet beschikbaar")
+
+    # Naam validatie — letters, cijfers, koppeltekens en underscores
+    safe = name.replace("-", "").replace("_", "")
+    if not safe.isalnum():
+        raise HTTPException(
+            status_code=400,
+            detail="Ongeldige naam. Gebruik alleen letters, cijfers, - of _"
+        )
+
+    temp_path = f"/tmp/{file.filename}"
+    try:
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        print(f"Computing speaker embedding for: {name}")
+        embedding = embedder.embed_audio_file(temp_path)
+
+        save_path = os.path.join(VOICES_DIR, f"{name}.pt")
+        torch.save(embedding, save_path)
+
+        return {"status": "success", "name": name}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+@app.delete("/voices/{name}")
+async def delete_voice(name: str):
+    """Verwijder een opgeslagen voice profiel"""
+    file_path = os.path.join(VOICES_DIR, f"{name}.pt")
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return {"status": "deleted"}
+    raise HTTPException(status_code=404, detail="Voice niet gevonden")
+
+
+# --- TTS ---
+
+def _load_speaker_emb(voice_name: Optional[str]):
+    if not voice_name:
+        return None
+    file_path = os.path.join(VOICES_DIR, f"{voice_name}.pt")
+    if os.path.exists(file_path):
+        return torch.load(file_path)
+    return None
+
+
+def _audio_to_wav_bytes(audio) -> bytes:
+    if isinstance(audio, torch.Tensor):
+        audio = audio.cpu().numpy()
+    audio = audio.astype(np.float32)
+    wav_buffer = io.BytesIO()
+    wav_write(wav_buffer, SAMPLE_RATE, audio)
+    wav_buffer.seek(0)
+    return wav_buffer.read()
+
 
 @app.post("/tts")
 async def generate_speech(request: TTSRequest):
-    """Generate complete audio file (non-streaming)"""
-    if not generator or not player:
-        raise HTTPException(status_code=503, detail="TTS models not initialized")
+    """Genereer audio (non-streaming)"""
+    if not tts:
+        raise HTTPException(status_code=503, detail="TTS model niet geïnitialiseerd")
 
     try:
-        audio_writer = StreamingAudioWriter(
-            player,
-            output_file=None,
-            chunk_size=request.chunk_size,
-            lookback_frames=request.lookback_frames
+        speaker_emb = _load_speaker_emb(request.voice_name)
+
+        kwargs = dict(
+            temperature=request.temperature,
+            top_p=request.top_p,
+            repetition_penalty=request.repetition_penalty,
         )
-        audio_writer.start()
+        if speaker_emb is not None:
+            kwargs["speaker_emb"] = speaker_emb
+        if request.language_tag:
+            kwargs["language_tag"] = request.language_tag
 
-        # Format prompt with speaker name if provided
-        prompt = request.text
-        if request.voice:
-            prompt = f"{request.voice.strip()}: {prompt}"
+        audio, _ = tts(request.text, **kwargs)
 
-        # Generate speech
-        result = generator.generate(
-            prompt,
-            audio_writer,
-            max_tokens=request.max_tokens
-        )
-
-        audio_writer.finalize()
-
-        if not audio_writer.audio_chunks:
-            raise HTTPException(status_code=500, detail="No audio generated")
-
-        full_audio = np.concatenate(audio_writer.audio_chunks)
-        wav_buffer = io.BytesIO()
-        wav_write(wav_buffer, 22050, full_audio)
-        wav_buffer.seek(0)
-
+        filename = f"speech_{request.voice_name or 'default'}.wav"
         return Response(
-            content=wav_buffer.read(),
+            content=_audio_to_wav_bytes(audio),
             media_type="audio/wav",
-            headers={
-                "Content-Disposition": "attachment; filename=speech.wav"
-            }
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/stream-tts")
-async def stream_speech(request: TTSRequest):
-    """Stream audio chunks as they're generated"""
-    if not generator or not player:
-        raise HTTPException(status_code=503, detail="TTS models not initialized")
-
-    import queue
-    import threading
-    import struct
-
-    async def audio_chunk_generator():
-        chunk_queue = queue.Queue()
-        class ChunkList(list):
-            def append(self, chunk):
-                super().append(chunk)
-                chunk_queue.put(("chunk", chunk))
-
-        audio_writer = StreamingAudioWriter(
-            player,
-            output_file=None,
-            chunk_size=request.chunk_size,
-            lookback_frames=request.lookback_frames
-        )
-        audio_writer.audio_chunks = ChunkList()
-
-        # Format prompt with speaker name if provided
-        prompt = request.text
-        if request.voice:
-            prompt = f"{request.voice.strip()}: {prompt}"
-
-        # Start generation in background thread
-        def generate():
-            try:
-                audio_writer.start()
-                generator.generate(
-                    prompt, audio_writer, max_tokens=request.max_tokens)
-                audio_writer.finalize()
-                chunk_queue.put(("done", None))
-            except Exception as e:
-                chunk_queue.put(("error", str(e)))
-
-        gen_thread = threading.Thread(target=generate)
-        gen_thread.start()
-
-        try:
-            while True:
-                msg_type, data = chunk_queue.get(timeout=60)
-                if msg_type == "chunk":
-                    pcm_data = (data * 32767).astype(np.int16)
-                    chunk_bytes = pcm_data.tobytes()
-                    length_prefix = struct.pack('<I', len(chunk_bytes))
-                    yield length_prefix + chunk_bytes
-                elif msg_type == "done":
-                    yield struct.pack('<I', 0)
-                    break
-                elif msg_type == "error":
-                    yield struct.pack('<I', 0xFFFFFFFF)
-                    break
-        finally:
-            gen_thread.join()
-
-    return StreamingResponse(
-        audio_chunk_generator(),
-        media_type="application/octet-stream"
-    )
 
 @app.get("/")
 async def root():
-    """Serve the Web UI"""
     if os.path.exists("index.html"):
         return FileResponse("index.html")
-    return {"message": "Kani TTS Server is running. index.html not found."}
+    return {"message": "Kani TTS 2 Server is running. index.html not found."}
+
 
 if __name__ == "__main__":
     import uvicorn

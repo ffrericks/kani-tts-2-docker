@@ -1,53 +1,51 @@
-# Use official PyTorch image with CUDA 12.4 - torch is pre-installed!
-FROM pytorch/pytorch:2.7.0-cuda12.6-cudnn9-runtime
+# CUDA 12.6 base — install Python + torch 2.8.0 manually
+FROM nvidia/cuda:12.6.3-cudnn9-runtime-ubuntu22.04
 
-# Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# System dependencies
 RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    libsndfile1 \
-    git \
-    gcc \
-    g++ \
-    build-essential \
+    python3 python3-pip python3-dev \
+    ffmpeg libsndfile1 \
+    git gcc g++ build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+# Make python3 available as python
+RUN ln -sf /usr/bin/python3 /usr/bin/python && \
+    pip3 install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install kani-tts - torch is already pre-installed in this base image
-RUN pip install --no-cache-dir kani-tts
-
-# nemo-toolkit installs an incompatible torchvision - force the correct version
-# torchvision 0.22.0 is compatible with torch 2.7.0 + CUDA 12.6
-RUN pip install --no-cache-dir --force-reinstall \
-    "torchvision==0.22.0" \
-    "torchaudio==2.7.0" \
+# Install torch 2.8.0 with CUDA 12.6 support
+RUN pip install --no-cache-dir \
+    "torch>=2.8.0" \
+    "torchaudio>=2.8.0" \
     --index-url https://download.pytorch.org/whl/cu126
 
-# Install server dependencies
-RUN pip install --no-cache-dir fastapi uvicorn scipy "transformers @ git+https://github.com/huggingface/transformers.git"
+# Install kani-tts-2 (includes nemo-toolkit, transformers, etc.)
+RUN pip install --no-cache-dir kani-tts-2
 
-# Clone the kani-tts repository to get the server source files
-RUN git clone https://github.com/nineninesix-ai/kani-tts.git /kani-tts-repo
+# nemo-toolkit can overwrite torchvision/torchaudio — force correct versions
+RUN pip install --no-cache-dir --force-reinstall \
+    "torchaudio>=2.8.0" \
+    --index-url https://download.pytorch.org/whl/cu126
 
-# Set working directory
+# Server dependencies
+RUN pip install --no-cache-dir \
+    fastapi \
+    uvicorn \
+    scipy \
+    python-multipart
+
 WORKDIR /app
 
-# Copy server files from cloned repo
-RUN cp -r /kani-tts-repo/examples/basic/* .
+# Directory for saved voice embeddings
+RUN mkdir -p /app/voices
 
-# Copy our custom server+UI files (overwrite defaults)
+# Copy custom server + UI
 COPY server.py .
-COPY config.py .
 COPY index.html .
 
-# Expose the port used by the server
 EXPOSE 8000
 
-# Set environment variables for model caching
 ENV HF_HOME=/root/.cache/huggingface
 
-CMD ["python3", "server.py"]
+CMD ["python", "server.py"]

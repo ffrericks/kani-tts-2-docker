@@ -27,11 +27,10 @@ RUN pip install --no-cache-dir --force-reinstall \
     "torchaudio>=2.8.0" \
     --index-url https://download.pytorch.org/whl/cu126
 
-# Lfm2HybridConvCache zit alleen in de git versie van transformers, niet op PyPI
-# ARG bust_cache voorkomt dat GitHub Actions een oude gecachede versie gebruikt
-ARG TRANSFORMERS_BUILD_DATE=20260419
+# nemo-toolkit installeert een oude transformers — force-reinstall naar 4.56.0+
+# Lfm2HybridConvCache bestaat pas vanaf transformers 4.54.0
 RUN pip install --no-cache-dir --force-reinstall \
-    "transformers @ git+https://github.com/huggingface/transformers.git"
+    "transformers==4.56.0"
 
 # Server dependencies
 RUN pip install --no-cache-dir \

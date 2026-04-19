@@ -2,7 +2,8 @@ version: '3.8'
 
 services:
   kani-tts:
-    build: .
+    # build: .
+    image: ghcr.io/ffrericks/kani-tts-docker:latest
     container_name: kani-tts
     ports:
       - "8000:8000"

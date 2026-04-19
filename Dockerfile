@@ -27,6 +27,10 @@ RUN pip install --no-cache-dir --force-reinstall \
     "torchaudio>=2.8.0" \
     --index-url https://download.pytorch.org/whl/cu126
 
+# kani-tts-2 vereist transformers>=4.56.0 — force-install na nemo
+RUN pip install --no-cache-dir --force-reinstall \
+    "transformers>=4.56.0"
+
 # Server dependencies
 RUN pip install --no-cache-dir \
     fastapi \

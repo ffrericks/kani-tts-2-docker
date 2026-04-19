@@ -5,7 +5,7 @@ services:
     image: ghcr.io/ffrericks/kani-tts-2-docker:latest
     container_name: kani-tts-2
     ports:
-      - "8001:8000"
+      - "8001:8001"
     volumes:
       - hf_cache:/root/.cache/huggingface
       - voices_data:/app/voices

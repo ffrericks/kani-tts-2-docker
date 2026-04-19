@@ -48,7 +48,7 @@ RUN mkdir -p /app/voices
 COPY server.py .
 COPY index.html .
 
-EXPOSE 8000
+EXPOSE 8001
 
 ENV HF_HOME=/root/.cache/huggingface
 

@@ -1,21 +1,18 @@
-# CUDA 12.6 base — install Python + torch 2.8.0 manually
-FROM nvidia/cuda:12.6.3-cudnn9-runtime-ubuntu22.04
+# Zelfde bewezen base image als kani-tts v1
+FROM pytorch/pytorch:2.7.0-cuda12.6-cudnn9-runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 # System dependencies
 RUN apt-get update && apt-get install -y \
-    python3 python3-pip python3-dev \
     ffmpeg libsndfile1 \
     git gcc g++ build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Make python3 available as python
-RUN ln -sf /usr/bin/python3 /usr/bin/python && \
-    pip3 install --no-cache-dir --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install torch 2.8.0 with CUDA 12.6 support
-RUN pip install --no-cache-dir \
+# Upgrade torch naar 2.8.0+ (kani-tts-2 vereist dit)
+RUN pip install --no-cache-dir --upgrade \
     "torch>=2.8.0" \
     "torchaudio>=2.8.0" \
     --index-url https://download.pytorch.org/whl/cu126
@@ -23,7 +20,7 @@ RUN pip install --no-cache-dir \
 # Install kani-tts-2 (includes nemo-toolkit, transformers, etc.)
 RUN pip install --no-cache-dir kani-tts-2
 
-# nemo-toolkit can overwrite torchvision/torchaudio — force correct versions
+# nemo-toolkit kan torchaudio overschrijven — force correct versie
 RUN pip install --no-cache-dir --force-reinstall \
     "torchaudio>=2.8.0" \
     --index-url https://download.pytorch.org/whl/cu126

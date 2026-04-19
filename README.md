@@ -20,7 +20,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - hf_cache:/root/.cache/huggingface
+      - / hf_cache:/root/.cache/huggingface
     deploy:
       resources:
         reservations:

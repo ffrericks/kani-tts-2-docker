@@ -19,6 +19,7 @@ services:
     restart: unless-stopped
     environment:
       - TZ=Europe/Amsterdam
+      - CUDA_VISIBLE_DEVICES=
     labels:
       - "casaos.ui.port=8001"
       - "casaos.ui.path=/"

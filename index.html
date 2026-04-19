@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kani TTS - AI Voice Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 2rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 600;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .studio-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        textarea {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--glass);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 120px;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .control-item label {
+            font-size: 0.875rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(63, 102, 241, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .audio-player {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--glass);
+            display: none;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        audio {
+            width: 100%;
+            height: 40px;
+            border-radius: 0.5rem;
+        }
+
+        .status {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Kani TTS</h1>
+            <p class="subtitle">Next-gen AI Speech Synthesis</p>
+        </header>
+
+        <div class="studio-card">
+            <div class="input-group">
+                <label for="text">What should I say?</label>
+                <textarea id="text" placeholder="Type your text here... Kani TTS will transform it into natural speech."></textarea>
+            </div>
+
+            <div class="controls">
+                <div class="control-item">
+                    <label>Temperature: <span id="temp-val">0.6</span></label>
+                    <input type="range" id="temperature" min="0.1" max="1.0" step="0.1" value="0.6">
+                </div>
+                <div class="control-item">
+                    <label>Top P: <span id="p-val">0.95</span></label>
+                    <input type="range" id="top_p" min="0.1" max="1.0" step="0.05" value="0.95">
+                </div>
+            </div>
+
+            <button id="generate-btn">
+                <div class="spinner" id="spinner"></div>
+                <span id="btn-text">Generate Speech</span>
+            </button>
+
+            <div class="audio-player" id="player-container">
+                <label>Result:</label>
+                <audio id="audio" controls></audio>
+                <div class="status" id="status">Ready to generate.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const textInput = document.getElementById('text');
+        const generateBtn = document.getElementById('generate-btn');
+        const audio = document.getElementById('audio');
+        const playerContainer = document.getElementById('player-container');
+        const status = document.getElementById('status');
+        const spinner = document.getElementById('spinner');
+        const btnText = document.getElementById('btn-text');
+
+        // Update range values
+        document.getElementById('temperature').oninput = (e) => document.getElementById('temp-val').textContent = e.target.value;
+        document.getElementById('top_p').oninput = (e) => document.getElementById('p-val').textContent = e.target.value;
+
+        generateBtn.onclick = async () => {
+            const text = textInput.value.trim();
+            if (!text) return;
+
+            // UI State
+            generateBtn.disabled = true;
+            spinner.style.display = 'block';
+            btnText.textContent = 'Generating...';
+            status.textContent = 'Contacting server...';
+            playerContainer.style.display = 'block';
+
+            try {
+                const response = await fetch('/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        temperature: parseFloat(document.getElementById('temperature').value),
+                        top_p: parseFloat(document.getElementById('top_p').value)
+                    })
+                });
+
+                if (!response.ok) throw new Error('Generation failed');
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                audio.src = url;
+                audio.play();
+
+                status.textContent = 'Generation complete!';
+                status.style.color = '#22c55e';
+            } catch (err) {
+                status.textContent = 'Error: ' + err.message;
+                status.style.color = '#ef4444';
+            } finally {
+                generateBtn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.textContent = 'Generate Speech';
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  kani-tts:
+    build: .
+    container_name: kani-tts
+    ports:
+      - "8000:8000"
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Amsterdam # Change to your timezone
+
+volumes:
+  hf_cache:
+    driver: local

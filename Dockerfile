@@ -11,17 +11,19 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Upgrade torch naar 2.8.0+ (kani-tts-2 vereist dit)
-RUN pip install --no-cache-dir --upgrade \
+# Upgrade torch naar 2.8.0+ inclusief torchvision (kani-tts-2 vereist dit)
+RUN pip install --no-cache-dir \
     "torch>=2.8.0" \
+    "torchvision>=0.23.0" \
     "torchaudio>=2.8.0" \
     --index-url https://download.pytorch.org/whl/cu126
 
-# Install kani-tts-2 (includes nemo-toolkit, transformers, etc.)
+# Install kani-tts-2 (nemo-toolkit kan torchvision overschrijven)
 RUN pip install --no-cache-dir kani-tts-2
 
-# nemo-toolkit kan torchaudio overschrijven — force correct versie
+# Force-reinstall torchvision + torchaudio zodat ze matchen met torch 2.8.0
 RUN pip install --no-cache-dir --force-reinstall \
+    "torchvision>=0.23.0" \
     "torchaudio>=2.8.0" \
     --index-url https://download.pytorch.org/whl/cu126
 

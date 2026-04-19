@@ -1,5 +1,5 @@
-# Use NVIDIA CUDA DEVEL image for extra build tools and headers
-FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
+# Use NVIDIA CUDA runtime for GPU support
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -18,37 +18,37 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Upgrade pip
-RUN pip3 install --no-cache-dir --upgrade pip
+RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install heavy dependencies separately to avoid resolution conflicts
-# Torch first, as many other packages depend on it
-RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+# Install PyTorch 2.8+ first (kani-tts requires >=2.8.0)
+# Using the default index which has the latest versions
+RUN pip3 install --no-cache-dir "torch>=2.8.0" torchaudio --index-url https://download.pytorch.org/whl/cu124
 
-# Install build dependencies
-RUN pip3 install --no-cache-dir Cython numba setuptools
+# Install kani-tts - this will automatically install nemo-toolkit==2.4.0
+# and compatible transformers as its own dependencies
+RUN pip3 install --no-cache-dir kani-tts
 
-# Clone the repository
-RUN git clone https://github.com/nineninesix-ai/kani-tts.git .
+# Install server dependencies
+RUN pip3 install --no-cache-dir fastapi uvicorn scipy
 
-# Install remaining Python dependencies
-RUN pip3 install --no-cache-dir \
-    fastapi \
-    uvicorn \
-    "nemo-toolkit[tts]==2.4.0" \
-    "transformers==4.47.1" \
-    scipy \
-    kani-tts
+# Clone the kani-tts repository to get the server source files
+RUN git clone https://github.com/nineninesix-ai/kani-tts.git /kani-tts-repo
+
+# Set working directory to the basic example
+WORKDIR /app
+
+# Copy server files from cloned repo and our custom overrides
+RUN cp -r /kani-tts-repo/examples/basic/* .
+
+# Copy our custom server+UI files (overwrite defaults)
+COPY server.py .
+COPY config.py .
+COPY index.html .
 
 # Expose the port used by the server
 EXPOSE 8000
 
 # Set environment variables for model caching
 ENV HF_HOME=/root/.cache/huggingface
-
-# Command to run the server
-WORKDIR /app/examples/basic
-COPY server.py .
-COPY config.py .
-COPY index.html .
 
 CMD ["python3", "server.py"]

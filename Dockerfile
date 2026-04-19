@@ -27,9 +27,9 @@ RUN pip install --no-cache-dir --force-reinstall \
     "torchaudio>=2.8.0" \
     --index-url https://download.pytorch.org/whl/cu126
 
-# kani-tts-2 vereist transformers>=4.56.0 — force-install na nemo
+# Lfm2HybridConvCache zit alleen in de git versie van transformers, niet op PyPI
 RUN pip install --no-cache-dir --force-reinstall \
-    "transformers>=4.56.0"
+    "transformers @ git+https://github.com/huggingface/transformers.git"
 
 # Server dependencies
 RUN pip install --no-cache-dir \

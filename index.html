@@ -127,6 +127,34 @@
         }
         audio { width: 100%; border-radius: 0.5rem; margin-top: 0.5rem; }
 
+        .time-report {
+            margin-top: 1rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--glass);
+            border-radius: 0.75rem;
+            padding: 0.875rem 1rem;
+        }
+        .time-report-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 0.6rem;
+        }
+        .time-report-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.4rem 1rem;
+        }
+        .time-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+        }
+        .time-label { color: var(--text-muted); }
+        .time-value { color: var(--text); font-weight: 600; }
+
         .status {
             margin-top: 0.75rem;
             font-size: 0.85rem;
@@ -235,6 +263,23 @@
         <div class="audio-result" id="player-container">
             <label>Resultaat</label>
             <audio id="audio" controls></audio>
+            <div class="time-report" id="time-report" style="display:none">
+                <div class="time-report-title">⏱ Time Report</div>
+                <div class="time-report-grid">
+                    <div class="time-row">
+                        <span class="time-label">Generatie</span>
+                        <span class="time-value" id="tr-total">—</span>
+                    </div>
+                    <div class="time-row">
+                        <span class="time-label">Audio duur</span>
+                        <span class="time-value" id="tr-duration">—</span>
+                    </div>
+                    <div class="time-row">
+                        <span class="time-label">Realtime factor</span>
+                        <span class="time-value" id="tr-rtf">—</span>
+                    </div>
+                </div>
+            </div>
             <div class="status" id="gen-status"></div>
         </div>
     </div>
@@ -401,9 +446,21 @@
                 throw new Error(err.detail || 'Genereren mislukt');
             }
 
+            const genTime   = parseFloat(res.headers.get('X-Generation-Time') || 0);
+            const audioDur  = parseFloat(res.headers.get('X-Audio-Duration')  || 0);
             const blob = await res.blob();
             audio.src = URL.createObjectURL(blob);
             audio.play();
+
+            // Time Report
+            if (genTime > 0) {
+                const rtf = audioDur > 0 ? (genTime / audioDur).toFixed(2) : '—';
+                document.getElementById('tr-total').textContent    = genTime + 's';
+                document.getElementById('tr-duration').textContent = audioDur + 's';
+                document.getElementById('tr-rtf').textContent      = rtf + 'x';
+                document.getElementById('time-report').style.display = 'block';
+            }
+
             status.textContent = 'Klaar!';
             status.className = 'status ok';
         } catch (e) {

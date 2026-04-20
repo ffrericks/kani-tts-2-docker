@@ -51,7 +51,5 @@ COPY index.html .
 EXPOSE 8001
 
 ENV HF_HOME=/root/.cache/huggingface
-# Forceer CPU mode — kani-tts-2 vereist meer VRAM dan de 4GB GPU beschikbaar heeft
-ENV CUDA_VISIBLE_DEVICES=-1
 
 CMD ["python", "server.py"]

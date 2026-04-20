@@ -3,6 +3,7 @@
 import io
 import os
 import shutil
+import time
 import torch
 import numpy as np
 from scipy.io.wavfile import write as wav_write
@@ -160,13 +161,27 @@ async def generate_speech(request: TTSRequest):
         if request.language_tag:
             kwargs["language_tag"] = request.language_tag
 
+        t_start = time.time()
         audio, _ = tts(request.text, **kwargs)
+        t_total = round(time.time() - t_start, 2)
+
+        # Bepaal audio duur voor context
+        if isinstance(audio, torch.Tensor):
+            audio_np = audio.cpu().numpy()
+        else:
+            audio_np = audio
+        audio_duration = round(len(audio_np) / SAMPLE_RATE, 2)
 
         filename = f"speech_{request.voice_name or 'default'}.wav"
         return Response(
             content=_audio_to_wav_bytes(audio),
             media_type="audio/wav",
-            headers={"Content-Disposition": f"attachment; filename={filename}"},
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "X-Generation-Time": str(t_total),
+                "X-Audio-Duration": str(audio_duration),
+                "Access-Control-Expose-Headers": "X-Generation-Time, X-Audio-Duration",
+            },
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -44,9 +44,10 @@ WORKDIR /app
 # Directory for saved voice embeddings
 RUN mkdir -p /app/voices
 
-# Copy custom server + UI
+# Copy custom server + UI + assets
 COPY server.py .
 COPY index.html .
+COPY public/ ./public/
 
 EXPOSE 8001
 

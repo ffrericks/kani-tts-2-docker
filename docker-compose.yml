@@ -40,7 +40,7 @@ x-casaos:
     en_us: AI Text-to-Speech 2 with Voice Cloning
   developer: nineninesix-ai
   author: ffrericks
-  icon: https://cdn-icons-png.flaticon.com/512/11890/11890041.png
+  icon: https://raw.githubusercontent.com/ffrericks/kani-tts-2-docker/main/public/kani-TTS2-docker.png
   thumbnail: ""
   title:
     en_us: Kani TTS 2

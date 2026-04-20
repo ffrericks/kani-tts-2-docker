@@ -240,6 +240,13 @@ async def generate_speech(request: TTSRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/public/{filename}")
+async def serve_public(filename: str):
+    fp = os.path.join("public", filename)
+    if os.path.exists(fp):
+        return FileResponse(fp)
+    raise HTTPException(status_code=404, detail="Bestand niet gevonden")
+
 @app.get("/")
 async def root():
     if os.path.exists("index.html"):

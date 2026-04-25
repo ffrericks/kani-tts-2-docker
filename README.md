@@ -1,5 +1,6 @@
 # Kani-TTS 2 Docker for CasaOS
 
+NOTE: I don't get this working on my machine, Use Kani-TTS instead.
 A dockerized version of [Kani-TTS 2](https://github.com/nineninesix-ai/kani-tts-2), ready to run on **CasaOS** and Proxmox environments with NVIDIA GPU passthrough.
 
 Includes a Web UI with built-in **Voice Cloning** — upload a short audio clip and clone any voice.

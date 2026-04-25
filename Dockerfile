@@ -14,10 +14,10 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 # Install kani-tts-2 dependencies
 RUN pip install --no-cache-dir kani-tts-2
 
-# Upgrade naar torch>=2.6 cu121 — NeMo CVE vereiste, compatibel met driver 535 (max CUDA 12.2)
+# Upgrade naar torch>=2.6 — vereist door NeMo CVE; cu118 heeft 2.6+ en werkt met driver 535
 RUN pip install --no-cache-dir --force-reinstall \
-    torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/cu121
+    "torch>=2.6.0" torchvision torchaudio \
+    --index-url https://download.pytorch.org/whl/cu118
 
 # nemo-toolkit installeert een oude transformers — force-reinstall naar 4.56.0+
 # Lfm2HybridConvCache bestaat pas vanaf transformers 4.54.0

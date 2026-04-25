@@ -15,7 +15,11 @@ from fastapi.responses import Response, FileResponse
 from pydantic import BaseModel
 from typing import Optional
 
-from kani_tts import KaniTTS, SpeakerEmbedder
+from kani_tts import KaniTTS
+try:
+    from kani_tts import SpeakerEmbedder
+except ImportError:
+    SpeakerEmbedder = None
 
 # Constants
 SAMPLE_RATE  = 22050
@@ -104,10 +108,14 @@ async def _init_models():
                 tts = KaniTTS(MODEL_NAME, device_map="cpu")
                 current_device = "cpu"
 
-        try:
-            embedder = SpeakerEmbedder()
-        except Exception as emb_err:
-            print(f"⚠️  SpeakerEmbedder niet geladen: {emb_err}")
+        if SpeakerEmbedder is not None:
+            try:
+                embedder = SpeakerEmbedder()
+            except Exception as emb_err:
+                print(f"⚠️  SpeakerEmbedder niet geladen: {emb_err}")
+                embedder = None
+        else:
+            print("ℹ️  Voice cloning niet beschikbaar in deze kani_tts versie")
             embedder = None
 
         is_ready = True

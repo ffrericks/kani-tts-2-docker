@@ -248,8 +248,6 @@ async def generate_speech(request: TTSRequest):
         )
         if speaker_emb is not None:
             kwargs["speaker_emb"] = speaker_emb
-        if request.language_tag:
-            kwargs["language_tag"] = request.language_tag
 
         t_start = time.time()
         audio, _ = tts(request.text, **kwargs)

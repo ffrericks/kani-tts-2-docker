@@ -11,14 +11,14 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install kani-tts-2 (haalt torch 2.5.x mee via cu121)
+# Install kani-tts-2 dependencies
 RUN pip install --no-cache-dir kani-tts-2
 
-# Force-reinstall torch cu121 zodat CUDA 12.1 gebruikt wordt
+# Upgrade naar torch 2.6.0 cu121 — vereist door NeMo (CVE-2025-32434), compatibel met driver 535
 RUN pip install --no-cache-dir --force-reinstall \
-    "torch>=2.5.0" \
-    "torchvision>=0.20.0" \
-    "torchaudio>=2.5.0" \
+    "torch==2.6.0" \
+    "torchvision==0.21.0" \
+    "torchaudio==2.6.0" \
     --index-url https://download.pytorch.org/whl/cu121
 
 # nemo-toolkit installeert een oude transformers — force-reinstall naar 4.56.0+

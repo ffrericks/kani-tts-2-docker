@@ -7,8 +7,8 @@ services:
     ports:
       - "8001:8001"
     volumes:
-      - hf_cache:/root/.cache/huggingface
-      - voices_data:/app/voices
+      - /DATA/AppData/kani-tts-2/huggingface:/root/.cache/huggingface
+      - /DATA/AppData/kani-tts-2/voices:/app/voices
     deploy:
       resources:
         reservations:
@@ -24,11 +24,6 @@ services:
       - "casaos.ui.port=8001"
       - "casaos.ui.path=/"
 
-volumes:
-  hf_cache:
-    driver: local
-  voices_data:
-    driver: local
 
 x-casaos:
   architectures:

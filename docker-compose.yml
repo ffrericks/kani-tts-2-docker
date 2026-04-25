@@ -9,17 +9,11 @@ services:
     volumes:
       - /DATA/AppData/kani-tts-2/huggingface:/root/.cache/huggingface
       - /DATA/AppData/kani-tts-2/voices:/app/voices
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    restart: unless-stopped
+    runtime: nvidia
     environment:
       - TZ=Europe/Amsterdam
-      - CUDA_VISIBLE_DEVICES=
+      - NVIDIA_VISIBLE_DEVICES=all
+    restart: unless-stopped
     labels:
       - "casaos.ui.port=8001"
       - "casaos.ui.path=/"

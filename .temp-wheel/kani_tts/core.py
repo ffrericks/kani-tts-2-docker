@@ -7,8 +7,12 @@ from typing import Optional, Tuple
 import numpy as np
 import os
 
-# Import BemaTTS custom model
-from .model import FlashCompatibleLfm2ForCausalLM
+# Import BemaTTS custom model (optioneel — niet aanwezig in alle versies)
+try:
+    from .model import FlashCompatibleLfm2ForCausalLM
+    _HAS_BEMATTS = True
+except ImportError:
+    _HAS_BEMATTS = False
 
 
 @dataclass
@@ -123,7 +127,7 @@ class KaniModel:
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         # Load model with BemaTTS if enabled
-        if self.conf.use_bematts:
+        if self.conf.use_bematts and _HAS_BEMATTS:
             if self.conf.use_learnable_rope:
                 print("🚀 Loading model with BemaTTS + Learnable RoPE...")
             else:

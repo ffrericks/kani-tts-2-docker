@@ -13,6 +13,8 @@ services:
     environment:
       - TZ=Europe/Amsterdam
       - NVIDIA_VISIBLE_DEVICES=all
+      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+      - MAX_NEW_TOKENS=1200
     restart: unless-stopped
     labels:
       - "casaos.ui.port=8001"

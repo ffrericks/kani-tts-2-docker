@@ -26,6 +26,7 @@ SAMPLE_RATE  = 22050
 VOICES_DIR   = "/app/voices"
 DEVICE_FILE  = "/app/device.cfg"
 MODEL_NAME   = "nineninesix/kani-tts-2-pt"
+MAX_NEW_TOKENS = int(os.environ.get("MAX_NEW_TOKENS", 1200))
 TEMPERATURE  = 0.7
 TOP_P        = 0.9
 REPETITION_PENALTY = 1.2
@@ -77,7 +78,7 @@ async def _init_models():
     try:
         if pref == "cpu":
             os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-            tts = KaniTTS(MODEL_NAME, device_map="cpu")
+            tts = KaniTTS(MODEL_NAME, device_map="cpu", max_new_tokens=MAX_NEW_TOKENS)
             current_device = "cpu"
         else:
             # Log GPU info voor diagnose
@@ -93,7 +94,7 @@ async def _init_models():
             # Probeer GPU, val terug op CPU bij fout
             try:
                 torch.cuda.empty_cache()
-                tts = KaniTTS(MODEL_NAME, device_map="auto", suppress_logs=False)
+                tts = KaniTTS(MODEL_NAME, device_map="auto", suppress_logs=False, max_new_tokens=MAX_NEW_TOKENS)
                 current_device = "cuda" if torch.cuda.is_available() and \
                     torch.cuda.device_count() > 0 else "cpu"
                 if torch.cuda.is_available():

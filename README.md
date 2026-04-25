@@ -19,31 +19,22 @@ services:
     image: ghcr.io/ffrericks/kani-tts-2-docker:latest
     container_name: kani-tts-2
     ports:
-      - "8001:8000"
+      - "8001:8001"
     volumes:
-      - hf_cache:/root/.cache/huggingface
-      - voices_data:/app/voices
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    restart: unless-stopped
+      - /DATA/AppData/kani-tts-2/huggingface:/root/.cache/huggingface
+      - /DATA/AppData/kani-tts-2/voices:/app/voices
+    runtime: nvidia
     environment:
       - TZ=Europe/Amsterdam
-
-volumes:
-  hf_cache:
-    driver: local
-  voices_data:
-    driver: local
+      - NVIDIA_VISIBLE_DEVICES=all
+    restart: unless-stopped
 ```
 
 3. Under **"Web UI"**, set the port to **`8001`** and the path to **`/`**
 4. Click **Install**
 5. Access the Web UI at `http://<your-server-ip>:8001`
+
+> **Geen GPU?** Verwijder de `runtime: nvidia` en `NVIDIA_VISIBLE_DEVICES` regels — de container draait dan op CPU.
 
 > **Note:** The first start takes several minutes to download the AI models. This only happens once thanks to the persistent volume.
 

@@ -1,5 +1,5 @@
-# Zelfde bewezen base image als kani-tts v1
-FROM pytorch/pytorch:2.7.0-cuda12.6-cudnn9-runtime
+# CUDA 12.1 — compatibel met driver 535.x (max CUDA 12.2)
+FROM pytorch/pytorch:2.5.1-cuda12.1-cudnn9-runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -11,22 +11,15 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Upgrade torch naar 2.8.0+ inclusief torchvision (kani-tts-2 vereist dit)
-RUN pip install --no-cache-dir \
-    "torch>=2.8.0" \
-    "torchvision>=0.23.0" \
-    "torchaudio>=2.8.0" \
-    --index-url https://download.pytorch.org/whl/cu126
-
-# Install kani-tts-2 from PyPI to pull all dependencies (nemo-toolkit etc.)
+# Install kani-tts-2 (haalt torch 2.5.x mee via cu121)
 RUN pip install --no-cache-dir kani-tts-2
 
-
-# Force-reinstall torchvision + torchaudio zodat ze matchen met torch 2.8.0
+# Force-reinstall torch cu121 zodat CUDA 12.1 gebruikt wordt
 RUN pip install --no-cache-dir --force-reinstall \
-    "torchvision>=0.23.0" \
-    "torchaudio>=2.8.0" \
-    --index-url https://download.pytorch.org/whl/cu126
+    "torch>=2.5.0" \
+    "torchvision>=0.20.0" \
+    "torchaudio>=2.5.0" \
+    --index-url https://download.pytorch.org/whl/cu121
 
 # nemo-toolkit installeert een oude transformers — force-reinstall naar 4.56.0+
 # Lfm2HybridConvCache bestaat pas vanaf transformers 4.54.0

@@ -42,7 +42,9 @@ class NemoAudioPlayer:
         self.nemo_codec_model = AudioCodecModel\
                 .from_pretrained(self.conf.nanocodec_model).eval()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.nemo_codec_model.to(self.device)
+        # Codec stays on CPU to preserve VRAM for the main LLM (~200-500 MB savings)
+        self.codec_device = 'cpu'
+        self.nemo_codec_model.to(self.codec_device)
         self.text_tokenizer_name = text_tokenizer_name
         if self.text_tokenizer_name:
             self.tokenizer = AutoTokenizer.from_pretrained(self.text_tokenizer_name)
@@ -100,7 +102,7 @@ class NemoAudioPlayer:
         out_ids = out_ids.flatten()
         self.output_validation(out_ids)
         audio_codes, len_ = self.get_nano_codes(out_ids)
-        audio_codes, len_ = audio_codes.to(self.device), len_.to(self.device)
+        audio_codes, len_ = audio_codes.to(self.codec_device), len_.to(self.codec_device)
         with torch.inference_mode():
             reconstructed_audio, _ = self.nemo_codec_model.decode(tokens=audio_codes, tokens_len=len_)
             output_audio = reconstructed_audio.cpu().detach().numpy().squeeze()
@@ -136,6 +138,7 @@ class KaniModel:
                 alpha_max=self.conf.alpha_max,
                 torch_dtype=torch.bfloat16,
                 device_map=self.conf.device_map,
+                low_cpu_mem_usage=True,
             )
         else:
             print("📦 Loading standard model (original KaniTTS)...")
@@ -143,6 +146,7 @@ class KaniModel:
                 model_name,
                 torch_dtype=torch.bfloat16,
                 device_map=self.conf.device_map,
+                low_cpu_mem_usage=True,
             )
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)

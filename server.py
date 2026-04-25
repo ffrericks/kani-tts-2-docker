@@ -73,20 +73,35 @@ async def _init_models():
     try:
         if pref == "cpu":
             os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-            tts = KaniTTS(MODEL_NAME)
+            tts = KaniTTS(MODEL_NAME, device_map="cpu")
             current_device = "cpu"
         else:
+            # Log GPU info voor diagnose
+            if torch.cuda.is_available():
+                gpu_name  = torch.cuda.get_device_name(0)
+                vram_total = torch.cuda.get_device_properties(0).total_memory / 1024**3
+                vram_free  = torch.cuda.mem_get_info()[0] / 1024**3
+                print(f"🖥️  GPU: {gpu_name}")
+                print(f"💾 VRAM: {vram_total:.1f} GB totaal, {vram_free:.1f} GB vrij")
+            else:
+                print("⚠️  Geen CUDA GPU gevonden — check driver en Docker GPU runtime")
+
             # Probeer GPU, val terug op CPU bij fout
             try:
-                tts = KaniTTS(MODEL_NAME)
+                torch.cuda.empty_cache()
+                tts = KaniTTS(MODEL_NAME, device_map="auto", suppress_logs=False)
                 current_device = "cuda" if torch.cuda.is_available() and \
                     torch.cuda.device_count() > 0 else "cpu"
+                if torch.cuda.is_available():
+                    vram_used = (torch.cuda.get_device_properties(0).total_memory
+                                 - torch.cuda.mem_get_info()[0]) / 1024**3
+                    print(f"📊 VRAM na laden: {vram_used:.1f} GB in gebruik")
             except Exception as gpu_err:
                 print(f"⚠️  GPU mislukt: {gpu_err}")
                 print("↩️  Terugvallen op CPU...")
                 torch.cuda.empty_cache()
                 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-                tts = KaniTTS(MODEL_NAME)
+                tts = KaniTTS(MODEL_NAME, device_map="cpu")
                 current_device = "cpu"
 
         try:
@@ -110,12 +125,23 @@ async def startup_event():
 # ── Health & Device ────────────────────────────────────────────────────────────
 @app.get("/health")
 async def health_check():
+    vram_info = {}
+    if torch.cuda.is_available():
+        total = torch.cuda.get_device_properties(0).total_memory / 1024**3
+        free  = torch.cuda.mem_get_info()[0] / 1024**3
+        vram_info = {
+            "gpu_name":   torch.cuda.get_device_name(0),
+            "vram_total": f"{total:.1f} GB",
+            "vram_free":  f"{free:.1f} GB",
+            "vram_used":  f"{total - free:.1f} GB",
+        }
     return {
         "status":           "ready" if is_ready else "initializing",
         "tts_initialized":  tts is not None,
         "cloning_available": embedder is not None,
         "device":           current_device,
         "device_pref":      get_device_pref(),
+        **vram_info,
     }
 
 

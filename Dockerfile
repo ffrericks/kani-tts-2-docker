@@ -21,11 +21,6 @@ RUN pip install --no-cache-dir \
 # Install kani-tts-2 from PyPI to pull all dependencies (nemo-toolkit etc.)
 RUN pip install --no-cache-dir kani-tts-2
 
-# Patch alleen core.py (NeMo codec op CPU, low_cpu_mem_usage)
-# Andere bestanden (incl. SpeakerEmbedder) van PyPI versie bewaren
-COPY .temp-wheel/kani_tts/core.py /tmp/kani_core_patch.py
-RUN SITE=$(python -c "import site; print(site.getsitepackages()[0])") && \
-    cp /tmp/kani_core_patch.py "$SITE/kani_tts/core.py"
 
 # Force-reinstall torchvision + torchaudio zodat ze matchen met torch 2.8.0
 RUN pip install --no-cache-dir --force-reinstall \
